@@ -1,0 +1,23 @@
+<!DOCTYPE html>
+<meta http-equiv="Content-Type" content="text/html; charset=Shift_JIS">
+<html lang="ja">
+<head>
+    <title>Slitherlink Player</title>
+    <script type="text/javascript" src="applet.js"></script>
+    <script type="text/javascript" src="sl_applet.js"></script>
+    <script type="text/javascript" src="sl_field.js"></script>
+    <script type="text/javascript" src="controller.js"></script>
+    <script type="text/javascript">
+    window.onload = function () {
+        var canvas = document.getElementById("player");
+        var controller = new Controller;
+        var puzzle = new SlitherlinkApplet;
+        var app = new Applet(canvas, controller, puzzle);
+    }
+    </script>
+</head>
+<body>
+    <canvas id="player" width="395" height="425"></canvas>
+    <param name="problem" value="aa20k0b2f400005000kf4448004a007fk54200040000k25g020a,aa4a2250kk50k0000404095001f4f002m0k0k00001034404k535,oe1af85k4000002i1l00g0e2kfk0244k044a3020a50k3041k00120k00220a50gk0440430504000k4042334f5afk0a4000k040kk0kk02n0340f500405a001k50540430f052a504kaa0421kn0c00dkhk00000k427325" />
+</body>
+</html>
