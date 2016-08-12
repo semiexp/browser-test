@@ -1,95 +1,122 @@
-function SlitherlinkApplet() {
-	this.outerMargin = 20;
-	this.lineMargin = 1;
-	this.edgeMaximumDistanceFromActualEdge = 5;
-	this.edgeMinimumDistanceFromVertex = 5;
-	this.vertexMaximumDistanceFromActualVertex = 15;
-	this.cellMaximumDistanceFromEdge = 12;
-	this.maximumTapDistance = 3;
+function SlitherlinkApplet(problems) {
+    this.outerMargin = 20;
+    this.lineMargin = 1;
+    this.lineWidth = 3;
 
-	this.isMouseClicking = false;
-	this.isLineAllowed = false;
-	this.isBlankAllowed = false;
-	this.moveDistance = 0;
-	this.lastVertexX = -2;
-	this.lastVertexY = -2;
-	this.lastCellX = -2;
-	this.lastCellY = -2;
+    this.isMouseClicking = false;
+    this.isLineAllowed = false;
+    this.isBlankAllowed = false;
+    this.moveDistance = 0;
+    this.lastVertexX = -2;
+    this.lastVertexY = -2;
+    this.lastCellX = -2;
+    this.lastCellY = -2;
 
-	this.isFinished = false;
+    this.isFinished = false;
 
-	this.undoHistory = [];
-	this.redoHistory = [];
+    this.undoHistory = [];
+    this.redoHistory = [];
 
-	this.setZoom(3);
-	this.field = new SlitherlinkField;
+    this.problems = problems;
+
+    this.setZoom(3);
 }
 SlitherlinkApplet.prototype.setProblem = function (id) {
+    this.isFinished = false;
+    this.undoHistory = [];
+    this.redoHistory = [];
 
+    this.field = new SlitherlinkField(SlitherlinkProblem.parseString(this.problems[id]));
+}
+SlitherlinkApplet.prototype.addProblem = function (problem) {
+    this.problems.push(problem);
+}
+SlitherlinkApplet.prototype.getNumberOfProblems = function () {
+    return this.problems.length;
 }
 SlitherlinkApplet.prototype.setApplet = function (a) {
-	this.applet = a;
+    this.applet = a;
 }
 SlitherlinkApplet.prototype.setCanvas = function (c) {
-	this.canvas = c;
-	this.ctx = c.getContext("2d");
+    this.canvas = c;
+    this.ctx = c.getContext("2d");
 }
 SlitherlinkApplet.prototype.getHeight = function () {
-	return this.outerMargin * 2 + this.dotSize + (this.dotSize + this.cellSize) * this.field.getHeight();
+    return this.outerMargin * 2 + this.dotSize + (this.dotSize + this.cellSize) * this.field.getHeight();
 }
 SlitherlinkApplet.prototype.getMinimumWidth = function () {
-	return this.outerMargin * 2 + this.dotSize + (this.dotSize + this.cellSize) * this.field.getWidth();
+    return this.outerMargin * 2 + this.dotSize + (this.dotSize + this.cellSize) * this.field.getWidth();
 }
 SlitherlinkApplet.prototype.setZoom = function (z) {
-	this.zoom = z;
-	this.dotSize = z * 2;
-	this.cellSize = z * 10;
-	this.blankXSize = z * 1.5;
+    this.zoom = z;
+    this.dotSize = z * 1;
+    this.cellSize = z * 10;
+    this.blankXSize = z * 1.5;
+    this.edgeMaximumDistanceFromActualEdge = z * 3;
+    this.edgeMinimumDistanceFromVertex = z;
+    this.vertexMaximumDistanceFromActualVertex = z * 6;
+    this.cellMaximumDistanceFromEdge = z * 4;
+    this.maximumTapDistance = z * 2;
+}
+SlitherlinkApplet.prototype.zoomOut = function () {
+    if (this.zoom == 3) return;
+    this.setZoom(this.zoom - 1);
+}
+SlitherlinkApplet.prototype.zoomIn = function () {
+    this.setZoom(this.zoom + 1);
 }
 SlitherlinkApplet.prototype.repaint = function () {
-	var ctx = this.ctx;
-	ctx.setTransform(1, 0, 0, 1, 0, this.applet.getControllerHeight());
+    var ctx = this.ctx;
+    ctx.setTransform(1, 0, 0, 1, 0, this.applet.getControllerHeight());
 
-	ctx.fillStyle = "#ffffff";
-	ctx.strokeStyle = "#ffffff";
-	ctx.lineWidth = 1.0;
-	ctx.fillRect(0, 0, this.applet.getWidth(), this.getHeight());
+    ctx.fillStyle = "#ffffff";
+    ctx.strokeStyle = "#ffffff";
+    ctx.lineWidth = 1.0;
+    ctx.fillRect(0, 0, this.applet.getWidth(), this.getHeight());
 
-	ctx.strokeStyle = "#666666";
-	ctx.lineWidth = 1.0;
-	ctx.strokeRect(1, 1, this.applet.getWidth() - 2, this.getHeight() - 2);
+    ctx.strokeStyle = "#666666";
+    ctx.lineWidth = 1.0;
+    ctx.strokeRect(1, 1, this.applet.getWidth() - 2, this.getHeight() - 2);
 
-	var field_width = this.field.getWidth();
-	var field_height = this.field.getHeight();
-	var cellSize = this.cellSize;
-	var dotSize = this.dotSize;
-	var outerMargin = this.outerMargin;
+    var field_width = this.field.getWidth();
+    var field_height = this.field.getHeight();
+    var cellSize = this.cellSize;
+    var dotSize = this.dotSize;
+    var outerMargin = this.outerMargin;
 
-	ctx.fillStyle = "#000000";
-	for (var x = 0; x <= field_width; ++x) {
-		for (var y = 0; y <= field_height; ++y) {
-			ctx.fillRect(outerMargin + x * (cellSize + dotSize), outerMargin + y * (cellSize + dotSize), dotSize, dotSize);
-		}
-	}
+    ctx.fillStyle = "#000000";
+    for (var x = 0; x <= field_width; ++x) {
+        for (var y = 0; y <= field_height; ++y) {
+            ctx.fillRect(outerMargin + x * (cellSize + dotSize), outerMargin + y * (cellSize + dotSize), dotSize, dotSize);
+        }
+    }
 
-	var field = this.field;
-	ctx.font = this.cellSize + "px 'Consolas'";
-	ctx.textAlign = "center";
-	ctx.textBaseline = "bottom";
-	for (var y = 0; y < field.height; ++y) {
-	    for (var x = 0; x < field.width; ++x) {
-	        var clue = field.getClue(y, x);
-	        if (0 <= clue && clue <= 3) {
-	            ctx.fillText(clue,
+    var field = this.field;
+    ctx.font = this.cellSize + "px 'Consolas'";
+    ctx.textAlign = "center";
+    ctx.textBaseline = "bottom";
+    for (var y = 0; y < field_height; ++y) {
+        for (var x = 0; x < field_width; ++x) {
+            var clue = field.getClue(y, x);
+            if (0 <= clue && clue <= 3) {
+                ctx.fillText(clue,
 					outerMargin + x * (dotSize + cellSize) + dotSize + cellSize / 2,
 					outerMargin + (y + 1) * (dotSize + cellSize),
 					cellSize
 					);
-	        }
-	    }
-	}
+            }
+        }
+    }
 
-	ctx.setTransform(1, 0, 0, 1, 0, 0);
+    ctx.setTransform(1, 0, 0, 1, 0, 0);
+
+    for (var x = 0; x <= 2 * field_width; ++x) {
+        for (var y = 0; y <= 2 * field_height; ++y) {
+            if (x % 2 != y % 2) this.paintEdge(x, y);
+        }
+    }
+
+    this.showAndUpdateIfComplete();
 }
 SlitherlinkApplet.prototype.showAndUpdateIfComplete = function () {
     this.isFinished = this.field.isFinished();
@@ -123,63 +150,63 @@ SlitherlinkApplet.prototype.performRedoAll = function () {
     while (this.redoHistory.length != 0) this.performRedo();
 }
 SlitherlinkApplet.prototype.updateEdge = function (x, y, v) {
-    if (this.field.getEdge(x, y) == v) return;
+    if (x < 0 || x > 2 * this.field.getWidth() || y < 0 || y > 2 * this.field.getHeight() || this.field.getEdge(x, y) == v) return;
     this.redoHistory = [];
     this.undoHistory.push({ x: x, y: y, state: this.field.getEdge(x, y) });
-	this.field.setEdge(x, y, v);
-	this.paintEdge(x, y);
-	this.showAndUpdateIfComplete();
+    this.field.setEdge(x, y, v);
+    this.paintEdge(x, y);
+    this.showAndUpdateIfComplete();
 }
 SlitherlinkApplet.prototype.paintEdge = function (x, y) {
-	var ctx = this.ctx;
-	var cellSize = this.cellSize;
-	var dotSize = this.dotSize;
-	var outerMargin = this.outerMargin;
-	var lineMargin = this.lineMargin;
+    var ctx = this.ctx;
+    var cellSize = this.cellSize;
+    var dotSize = this.dotSize;
+    var outerMargin = this.outerMargin;
+    var lineMargin = this.lineMargin;
 
-	ctx.setTransform(1, 0, 0, 1, 0, this.applet.getControllerHeight());
+    ctx.setTransform(1, 0, 0, 1, 0, this.applet.getControllerHeight());
 
-	ctx.fillStyle = "#ffffff";
-	if (x % 2 == 1 && y % 2 == 0) {
-		ctx.fillRect(outerMargin + (x - 1) / 2 * (cellSize + dotSize) + lineMargin + dotSize, outerMargin + y / 2 * (cellSize + dotSize) + lineMargin, cellSize - 2 * lineMargin, dotSize - 2 * lineMargin);
-	} else if (x % 2 == 0 && y % 2 == 1) {
-		ctx.fillRect(outerMargin + x / 2 * (cellSize + dotSize) + lineMargin, outerMargin + (y - 1) / 2 * (cellSize + dotSize) + lineMargin + dotSize, dotSize - 2 * lineMargin, cellSize - 2 * lineMargin);
-	}
-
-	var center_x, center_y;
-	if (x % 2 == 1 && y % 2 == 0) {
-	    center_x = outerMargin + (x - 1) / 2 * (cellSize + dotSize) + dotSize + cellSize / 2;
-	    center_y = outerMargin + y / 2 * (cellSize + dotSize) + dotSize / 2;
-	} else {
-	    center_x = outerMargin + x / 2 * (cellSize + dotSize) + dotSize / 2;
-	    center_y = outerMargin + (y - 1) / 2 * (cellSize + dotSize) + dotSize + cellSize / 2;
-	}
-	ctx.fillRect(center_x - this.blankXSize, center_y - this.blankXSize, 2 * this.blankXSize + 1, 2 * this.blankXSize + 1);
-
-	var edge_state = this.field.getEdge(x, y);
-	if (edge_state == 1) { // line
-		ctx.fillStyle = "#000000";
-		if (x % 2 == 1 && y % 2 == 0) {
-			ctx.fillRect(outerMargin + (x - 1) / 2 * (cellSize + dotSize) + lineMargin + dotSize, outerMargin + y / 2 * (cellSize + dotSize) + lineMargin, cellSize - 2 * lineMargin, dotSize - 2 * lineMargin);
-		} else if (x % 2 == 0 && y % 2 == 1) {
-			ctx.fillRect(outerMargin + x / 2 * (cellSize + dotSize) + lineMargin, outerMargin + (y - 1) / 2 * (cellSize + dotSize) + lineMargin + dotSize, dotSize - 2 * lineMargin, cellSize - 2 * lineMargin);
-		}
-	} else if (edge_state == 2) { // blank
-	    center_x += 0.5;
-	    center_y += 0.5;
-	    ctx.strokeStyle = "#000000";
-	    ctx.lineWidth = 1.0;
-	    ctx.beginPath();
-	    ctx.moveTo(center_x - this.blankXSize, center_y - this.blankXSize);
-	    ctx.lineTo(center_x + this.blankXSize, center_y + this.blankXSize);
-	    ctx.stroke();
-	    ctx.beginPath();
-	    ctx.moveTo(center_x + this.blankXSize, center_y - this.blankXSize);
-	    ctx.lineTo(center_x - this.blankXSize, center_y + this.blankXSize);
-	    ctx.stroke();
+    ctx.fillStyle = "#ffffff";
+    if (x % 2 == 1 && y % 2 == 0) {
+        ctx.fillRect(outerMargin + (x - 1) / 2 * (cellSize + dotSize) + lineMargin + dotSize, outerMargin + y / 2 * (cellSize + dotSize) + Math.floor((dotSize - this.lineWidth) / 2), cellSize - 2 * lineMargin, this.lineWidth + (dotSize + this.lineWidth) % 2);
+    } else if (x % 2 == 0 && y % 2 == 1) {
+        ctx.fillRect(outerMargin + x / 2 * (cellSize + dotSize) + Math.floor((dotSize - this.lineWidth) / 2), outerMargin + (y - 1) / 2 * (cellSize + dotSize) + lineMargin + dotSize, this.lineWidth + (dotSize + this.lineWidth) % 2, cellSize - 2 * lineMargin);
     }
 
-	ctx.setTransform(1, 0, 0, 1, 0, 0);
+    var center_x, center_y;
+    if (x % 2 == 1 && y % 2 == 0) {
+        center_x = outerMargin + (x - 1) / 2 * (cellSize + dotSize) + dotSize + cellSize / 2;
+        center_y = outerMargin + y / 2 * (cellSize + dotSize) + dotSize / 2;
+    } else {
+        center_x = outerMargin + x / 2 * (cellSize + dotSize) + dotSize / 2;
+        center_y = outerMargin + (y - 1) / 2 * (cellSize + dotSize) + dotSize + cellSize / 2;
+    }
+    ctx.fillRect(center_x - this.blankXSize, center_y - this.blankXSize, 2 * this.blankXSize + 1, 2 * this.blankXSize + 1);
+
+    var edge_state = this.field.getEdge(x, y);
+    if (edge_state == 1) { // line
+        ctx.fillStyle = "#000000";
+        if (x % 2 == 1 && y % 2 == 0) {
+            ctx.fillRect(outerMargin + (x - 1) / 2 * (cellSize + dotSize) + lineMargin + dotSize, outerMargin + y / 2 * (cellSize + dotSize) + (dotSize - this.lineWidth) / 2, cellSize - 2 * lineMargin, this.lineWidth);
+        } else if (x % 2 == 0 && y % 2 == 1) {
+            ctx.fillRect(outerMargin + x / 2 * (cellSize + dotSize) + (dotSize - this.lineWidth) / 2, outerMargin + (y - 1) / 2 * (cellSize + dotSize) + lineMargin + dotSize, this.lineWidth, cellSize - 2 * lineMargin);
+        }
+    } else if (edge_state == 2) { // blank
+        center_x += 0.5;
+        center_y += 0.5;
+        ctx.strokeStyle = "#000000";
+        ctx.lineWidth = 1.0;
+        ctx.beginPath();
+        ctx.moveTo(center_x - this.blankXSize, center_y - this.blankXSize);
+        ctx.lineTo(center_x + this.blankXSize, center_y + this.blankXSize);
+        ctx.stroke();
+        ctx.beginPath();
+        ctx.moveTo(center_x + this.blankXSize, center_y - this.blankXSize);
+        ctx.lineTo(center_x - this.blankXSize, center_y + this.blankXSize);
+        ctx.stroke();
+    }
+
+    ctx.setTransform(1, 0, 0, 1, 0, 0);
 }
 SlitherlinkApplet.prototype.mouseDown = function (x, y, b) {
     var loc = this.getLocation(x, y);
@@ -238,103 +265,103 @@ SlitherlinkApplet.prototype.mouseUp = function (x, y, b) {
     }
 }
 SlitherlinkApplet.prototype.getLocation = function (x, y) {
-	// (x, y): position given by Applet
-	x -= this.outerMargin; y -= this.outerMargin;
-	var ret = {};
-	var dotSize = this.dotSize, cellSize = this.cellSize;
+    // (x, y): position given by Applet
+    x -= this.outerMargin; y -= this.outerMargin;
+    var ret = {};
+    var dotSize = this.dotSize, cellSize = this.cellSize;
 
-	var vtx_x = Math.floor(x / (dotSize + cellSize)), vtx_y = Math.floor(y / (dotSize + cellSize));
-	var x_ofs = x - vtx_x * (dotSize + cellSize), y_ofs = y - vtx_y * (dotSize + cellSize);
+    var vtx_x = Math.floor(x / (dotSize + cellSize)), vtx_y = Math.floor(y / (dotSize + cellSize));
+    var x_ofs = x - vtx_x * (dotSize + cellSize), y_ofs = y - vtx_y * (dotSize + cellSize);
 
-	if (x_ofs < dotSize && y_ofs < dotSize) {
-		// on vertex
-		ret.edgeX = ret.edgeY = -2;
-		ret.cellX = -2; ret.cellY = -2;
-		ret.vertexX = vtx_x * 2; ret.vertexY = vtx_y * 2;
-	} else if (dotSize <= x_ofs && y_ofs < dotSize) {
-		ret.edgeX = vtx_x * 2 + 1; ret.edgeY = vtx_y * 2;
-		ret.cellX = -2; ret.cellY = -2;
-		if (x_ofs - dotSize <= this.vertexMaximumDistanceFromActualVertex) {
-			ret.vertexX = vtx_x * 2; ret.vertexY = vtx_y * 2;
-		} else if (dotSize + cellSize - x_ofs <= this.vertexMaximumDistanceFromActualVertex) {
-			ret.vertexX = vtx_x * 2 + 2; ret.vertexY = vtx_y * 2;
-		} else {
-			ret.vertexX = -2; ret.vertexY = -2;
-		}
-	} else if (x_ofs < dotSize && dotSize <= y_ofs) {
-		ret.edgeX = vtx_x * 2; ret.edgeY = vtx_y * 2 + 1;
-		ret.cellX = -2; ret.cellY = -2;
-		if (y_ofs - dotSize <= this.vertexMaximumDistanceFromActualVertex) {
-			ret.vertexX = vtx_x * 2; ret.vertexY = vtx_y * 2;
-		} else if (dotSize + cellSize - y_ofs <= this.vertexMaximumDistanceFromActualVertex) {
-			ret.vertexX = vtx_x * 2; ret.vertexY = vtx_y * 2 + 2;
-		} else {
-			ret.vertexX = -2; ret.vertexY = -2;
-		}
-	} else {
-		// on cell; find the nearest edge
-		var edge_distance = cellSize;
-		x_ofs -= dotSize; y_ofs -= dotSize;
-		if (x_ofs < edge_distance) {
-			edge_distance = x_ofs;
-			ret.edgeX = vtx_x * 2;
-			ret.edgeY = vtx_y * 2 + 1;
-		}
-		if (y_ofs < edge_distance) {
-			edge_distance = y_ofs;
-			ret.edgeX = vtx_x * 2 + 1;
-			ret.edgeY = vtx_y * 2;
-		}
-		if (cellSize - x_ofs < edge_distance) {
-			edge_distance = cellSize - x_ofs;
-			ret.edgeX = vtx_x * 2 + 2;
-			ret.edgeY = vtx_y * 2 + 1;
-		}
-		if (cellSize - y_ofs < edge_distance) {
-			edge_distance = cellSize - y_ofs;
-			ret.edgeX = vtx_x * 2 + 1;
-			ret.edgeY = vtx_y * 2 + 2;
-		}
-		if (edge_distance > this.edgeMaximumDistanceFromActualEdge) {
-			ret.edgeX = ret.edgeY = -2;
-		}
-		if (edge_distance <= this.cellMaximumDistanceFromEdge) {
-			ret.cellX = vtx_x * 2 + 1;
-			ret.cellY = vtx_y * 2 + 1;
-		} else {
-			ret.cellX = -2; ret.cellY = -2;
-		}
+    if (x_ofs < dotSize && y_ofs < dotSize) {
+        // on vertex
+        ret.edgeX = ret.edgeY = -2;
+        ret.cellX = -2; ret.cellY = -2;
+        ret.vertexX = vtx_x * 2; ret.vertexY = vtx_y * 2;
+    } else if (dotSize <= x_ofs && y_ofs < dotSize) {
+        ret.edgeX = vtx_x * 2 + 1; ret.edgeY = vtx_y * 2;
+        ret.cellX = -2; ret.cellY = -2;
+        if (x_ofs - dotSize <= this.vertexMaximumDistanceFromActualVertex) {
+            ret.vertexX = vtx_x * 2; ret.vertexY = vtx_y * 2;
+        } else if (dotSize + cellSize - x_ofs <= this.vertexMaximumDistanceFromActualVertex) {
+            ret.vertexX = vtx_x * 2 + 2; ret.vertexY = vtx_y * 2;
+        } else {
+            ret.vertexX = -2; ret.vertexY = -2;
+        }
+    } else if (x_ofs < dotSize && dotSize <= y_ofs) {
+        ret.edgeX = vtx_x * 2; ret.edgeY = vtx_y * 2 + 1;
+        ret.cellX = -2; ret.cellY = -2;
+        if (y_ofs - dotSize <= this.vertexMaximumDistanceFromActualVertex) {
+            ret.vertexX = vtx_x * 2; ret.vertexY = vtx_y * 2;
+        } else if (dotSize + cellSize - y_ofs <= this.vertexMaximumDistanceFromActualVertex) {
+            ret.vertexX = vtx_x * 2; ret.vertexY = vtx_y * 2 + 2;
+        } else {
+            ret.vertexX = -2; ret.vertexY = -2;
+        }
+    } else {
+        // on cell; find the nearest edge
+        var edge_distance = cellSize;
+        x_ofs -= dotSize; y_ofs -= dotSize;
+        if (x_ofs < edge_distance) {
+            edge_distance = x_ofs;
+            ret.edgeX = vtx_x * 2;
+            ret.edgeY = vtx_y * 2 + 1;
+        }
+        if (y_ofs < edge_distance) {
+            edge_distance = y_ofs;
+            ret.edgeX = vtx_x * 2 + 1;
+            ret.edgeY = vtx_y * 2;
+        }
+        if (cellSize - x_ofs < edge_distance) {
+            edge_distance = cellSize - x_ofs;
+            ret.edgeX = vtx_x * 2 + 2;
+            ret.edgeY = vtx_y * 2 + 1;
+        }
+        if (cellSize - y_ofs < edge_distance) {
+            edge_distance = cellSize - y_ofs;
+            ret.edgeX = vtx_x * 2 + 1;
+            ret.edgeY = vtx_y * 2 + 2;
+        }
+        if (edge_distance > this.edgeMaximumDistanceFromActualEdge) {
+            ret.edgeX = ret.edgeY = -2;
+        }
+        if (edge_distance <= this.cellMaximumDistanceFromEdge) {
+            ret.cellX = vtx_x * 2 + 1;
+            ret.cellY = vtx_y * 2 + 1;
+        } else {
+            ret.cellX = -2; ret.cellY = -2;
+        }
 
-		var vertex_distance;
-		if (x_ofs <= cellSize / 2 && y_ofs <= cellSize / 2) {
-			vertex_distance = Math.sqrt(x_ofs * x_ofs + y_ofs * y_ofs);
-			ret.vertexX = vtx_x * 2;
-			ret.vertexY = vtx_y * 2;
-		} else if (x_ofs <= cellSize / 2 && y_ofs > cellSize / 2) {
-			vertex_distance = Math.sqrt(x_ofs * x_ofs + (cellSize - y_ofs) * (cellSize - y_ofs));
-			ret.vertexX = vtx_x * 2;
-			ret.vertexY = vtx_y * 2 + 2;
-		} else if (x_ofs > cellSize / 2 && y_ofs <= cellSize / 2) {
-			vertex_distance = Math.sqrt((cellSize - x_ofs) * (cellSize - x_ofs) + y_ofs * y_ofs);
-			ret.vertexX = vtx_x * 2 + 2;
-			ret.vertexY = vtx_y * 2;
-		} else if (x_ofs > cellSize / 2 && y_ofs > cellSize / 2) {
-			vertex_distance = Math.sqrt((cellSize - x_ofs) * (cellSize - x_ofs) + (cellSize - y_ofs) * (cellSize - y_ofs));
-			ret.vertexX = vtx_x * 2 + 2;
-			ret.vertexY = vtx_y * 2 + 2;
-		}
-		if (vertex_distance > this.vertexMaximumDistanceFromActualVertex) {
-			ret.vertexX = -2; ret.vertexY = -2;
-		}
-	}
-	if (ret.edgeX < 0 || ret.edgeY < 0 || ret.edgeX > 2 * this.field.getWidth() || ret.edgeY > 2 * this.field.getHeight()) {
-		ret.edgeX = -2; ret.edgeY = -2;
-	}
-	if (ret.cellX < -1 || ret.cellY < -1 || ret.cellX > 2 * this.field.getWidth() + 1 || ret.cellY > 2 * this.field.getHeight() + 1) {
-		ret.cellX = -2; ret.cellY = -2;
-	}
-	if (ret.vertexX < 0 || ret.vertexY < 0 || ret.vertexX > 2 * this.field.getWidth() || ret.vertexY > 2 * this.field.getHeight()) {
-		ret.vertexX = -2; ret.vertexY = -2;
-	}
-	return ret;
+        var vertex_distance;
+        if (x_ofs <= cellSize / 2 && y_ofs <= cellSize / 2) {
+            vertex_distance = Math.sqrt(x_ofs * x_ofs + y_ofs * y_ofs);
+            ret.vertexX = vtx_x * 2;
+            ret.vertexY = vtx_y * 2;
+        } else if (x_ofs <= cellSize / 2 && y_ofs > cellSize / 2) {
+            vertex_distance = Math.sqrt(x_ofs * x_ofs + (cellSize - y_ofs) * (cellSize - y_ofs));
+            ret.vertexX = vtx_x * 2;
+            ret.vertexY = vtx_y * 2 + 2;
+        } else if (x_ofs > cellSize / 2 && y_ofs <= cellSize / 2) {
+            vertex_distance = Math.sqrt((cellSize - x_ofs) * (cellSize - x_ofs) + y_ofs * y_ofs);
+            ret.vertexX = vtx_x * 2 + 2;
+            ret.vertexY = vtx_y * 2;
+        } else if (x_ofs > cellSize / 2 && y_ofs > cellSize / 2) {
+            vertex_distance = Math.sqrt((cellSize - x_ofs) * (cellSize - x_ofs) + (cellSize - y_ofs) * (cellSize - y_ofs));
+            ret.vertexX = vtx_x * 2 + 2;
+            ret.vertexY = vtx_y * 2 + 2;
+        }
+        if (vertex_distance > this.vertexMaximumDistanceFromActualVertex) {
+            ret.vertexX = -2; ret.vertexY = -2;
+        }
+    }
+    if (ret.edgeX < 0 || ret.edgeY < 0 || ret.edgeX > 2 * this.field.getWidth() || ret.edgeY > 2 * this.field.getHeight()) {
+        ret.edgeX = -2; ret.edgeY = -2;
+    }
+    if (ret.cellX < -1 || ret.cellY < -1 || ret.cellX > 2 * this.field.getWidth() + 1 || ret.cellY > 2 * this.field.getHeight() + 1) {
+        ret.cellX = -2; ret.cellY = -2;
+    }
+    if (ret.vertexX < 0 || ret.vertexY < 0 || ret.vertexX > 2 * this.field.getWidth() || ret.vertexY > 2 * this.field.getHeight()) {
+        ret.vertexX = -2; ret.vertexY = -2;
+    }
+    return ret;
 }
