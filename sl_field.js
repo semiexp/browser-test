@@ -1,19 +1,15 @@
 // 0: undecided, 1: line, 2: blank
-function SlitherlinkField() {
-	this.height = 5;
-	this.width = 5;
+function SlitherlinkField(problem) {
+	this.height = problem.getHeight();
+	this.width = problem.getWidth();
 	this.data = [];
 	for (var y = 0; y <= 2 * this.height; ++y) {
 		var line = [];
 		for (var x = 0; x <= 2 * this.width; ++x) {
-			line.push((y % 2 == x % 2) ? -1 : 0);
+			line.push((y % 2 == 1 && x % 2 == 1) ? problem.getClue((x - 1) / 2, (y - 1) / 2) : 0);
 		}
 		this.data.push(line);
 	}
-	this.data[1][1] = 1;
-	this.data[1][3] = 2;
-	this.data[1][5] = 3;
-	this.data[3][5] = 0;
 }
 SlitherlinkField.prototype.getHeight = function () {
 	return this.height;
