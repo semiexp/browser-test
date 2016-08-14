@@ -92,7 +92,7 @@ SlitherlinkApplet.prototype.repaint = function () {
     }
 
     var field = this.field;
-    ctx.font = this.cellSize + "px 'Consolas'";
+    ctx.font = (this.cellSize * 0.9) + "px 'Consolas'";
     ctx.textAlign = "center";
     ctx.textBaseline = "bottom";
     for (var y = 0; y < field_height; ++y) {
@@ -235,11 +235,11 @@ SlitherlinkApplet.prototype.mouseMove = function (x, y, b) {
         this.lastCellX = -2;
         this.lastCellY = -2;
     }
-    if (this.isLineAllowed && this.lastVertexX != -2 && loc.vertexX != -2 && Math.abs(this.lastVertexX - loc.vertexX) + Math.abs(this.lastVertexY - loc.vertexY) == 2) {
+    if (this.moveDistance > this.maximumTapDistance && this.isLineAllowed && this.lastVertexX != -2 && loc.vertexX != -2 && Math.abs(this.lastVertexX - loc.vertexX) + Math.abs(this.lastVertexY - loc.vertexY) == 2) {
         if (!this.isFinished) this.updateEdge((this.lastVertexX + loc.vertexX) / 2, (this.lastVertexY + loc.vertexY) / 2, 1);
         this.isBlankAllowed = false;
     }
-    if (this.isBlankAllowed && this.lastCellX != -2 && loc.cellX != -2 && Math.abs(this.lastCellX - loc.cellX) + Math.abs(this.lastCellY - loc.cellY) == 2) {
+    if (false && this.isBlankAllowed && this.lastCellX != -2 && loc.cellX != -2 && Math.abs(this.lastCellX - loc.cellX) + Math.abs(this.lastCellY - loc.cellY) == 2) {
         if (!this.isFinished) this.updateEdge((this.lastCellX + loc.cellX) / 2, (this.lastCellY + loc.cellY) / 2, 2);
         this.isLineAllowed = false;
     }
