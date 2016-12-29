@@ -68,7 +68,8 @@ function createButton(content, action, enableLongPress) {
             },
             touchend: function (event) {
                 btn.css({
-                    backgroundColor: "#dddddd"
+                    border: "solid 1px #dddddd",
+                    backgroundColor: "#eeeeee"
                 });
                 if (timer) {
                     clearTimeout(timer);
